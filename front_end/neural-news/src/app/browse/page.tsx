@@ -9,9 +9,13 @@ interface NewsletterDate {
   articleCount: number;
 }
 
+const CATEGORIES = ["Technology", "Science", "Entertainment", "Politics", "Business"] as const;
+
+type Category = typeof CATEGORIES[number];
+
 interface NewsArticle {
   id: number;
-  category: "Technology" | "Science" | "Entertainment" | "Politics";
+  categories: Category[];
   createdAt: string;
   date: string;
   excerpt: string;
@@ -156,9 +160,10 @@ const NewsWebsite: React.FC = () => {
   const getCategoryColor = (category: string): string => {
     const colors: { [key: string]: string } = {
       'Technology': 'text-blue-400 bg-blue-400/10',
-      'Entertainment': 'text-green-400 bg-green-400/10',
+      'Entertainment': 'text-rose-400 bg-rose-400/10',
       'Science': 'text-purple-400 bg-purple-400/10',
-      'Politics': 'text-yellow-400 bg-yellow-400/10'
+      'Politics': 'text-green-400 bg-green-400/10',
+      'Business': 'text-yellow-400 bg-yellow-400/10 '
     };
     return colors[category] || 'text-gray-400 bg-gray-400/10';
   };
@@ -278,8 +283,15 @@ const NewsWebsite: React.FC = () => {
                     } backdrop-blur-sm rounded-2xl p-6 border border-slate-700/30 hover:border-slate-600/50 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1`}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(article.category)}`}>
-                        {article.category}
+                      <div className="flex flex-wrap gap-2">
+                        {article.categories.map((category, categoryIndex) => (
+                          <div
+                            key={categoryIndex}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(category)}`}
+                          >
+                            {category}
+                          </div>
+                        ))}
                       </div>
                       {article.groundbreaking && (
                         <div className="px-3 py-1 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 rounded-full text-xs font-semibold border border-amber-500/30">
