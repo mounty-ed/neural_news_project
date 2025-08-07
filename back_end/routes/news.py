@@ -6,7 +6,7 @@ import os
 from typing import List, Dict, Any
 from back_end.extensions.firebase import db
 
-news_bp = Blueprint('news', __name__, url_prefix='/api')
+news_bp = Blueprint('news', __name__)
 
 @news_bp.route('/news', methods=['GET'])
 def get_newsletter_dates():

@@ -1,71 +1,103 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Share2, Bookmark, Clock, Eye, Calendar, User, TrendingUp } from 'lucide-react';
 
+type ArticleSection = {
+  heading: string;
+  content: string;
+};
+
+type Article = {
+  id: number;
+  title: string;
+  subtitle: string;
+  createdAt: string;
+  readTime: number;
+  views: number;
+  categories: string[];
+  groundbreaking: boolean;
+  content: ArticleSection[];
+};
+
 export default function ArticlePage() {
-  const article = {
-    id: 1,
-    title: "Revolutionary AI System Achieves Breakthrough in Neural Interface Technology",
-    subtitle: "Scientists at MIT demonstrate the first successful bidirectional brain-computer interface capable of both reading neural signals and providing sensory feedback with unprecedented precision.",
-    author: "Dr. Sarah Chen",
-    publishedAt: "2025-08-06T10:30:00Z",
-    readTime: 8,
-    views: 15420,
-    categories: ["AI Research", "Neurotechnology", "Medical Innovation"],
-    groundbreaking: true,
-    content: [
-      {
-        type: "section",
-        heading: "The Breakthrough",
-        content: "In a landmark achievement that could revolutionize how we treat neurological conditions, researchers at MIT's Computer Science and Artificial Intelligence Laboratory (CSAIL) have developed the most advanced brain-computer interface to date. This system represents a quantum leap in neural technology, combining cutting-edge AI algorithms with novel electrode designs to create seamless communication between the human brain and external devices.\n\nThe research, published in Nature Neuroscience, demonstrates for the first time a bidirectional neural interface that can both interpret complex thought patterns and provide tactile sensory feedback directly to the brain. This breakthrough opens unprecedented possibilities for treating paralysis, depression, and other neurological conditions."
-      },
-      {
-        type: "section",
-        heading: "Technical Innovation",
-        content: "The system utilizes a proprietary neural network architecture called 'NeuroLink AI' that can decode neural signals with 99.2% accuracy - a significant improvement over previous systems that typically achieved 60-70% accuracy. The key innovation lies in the use of flexible, biocompatible electrodes that can adapt to the brain's natural movements and changes over time.\n\n'We've essentially created a universal translator between the language of neurons and digital systems,' explains lead researcher Dr. Sarah Chen. 'The AI can learn individual neural patterns and adapt in real-time, making the interface feel completely natural to users.'\n\nThe system processes over 1 million neural signals per second, using advanced machine learning algorithms to filter out noise and identify genuine intentional signals. This processing power allows for incredibly precise control of external devices, from robotic limbs to computer interfaces."
-      },
-      {
-        type: "section",
-        heading: "Clinical Applications",
-        content: "The immediate applications for this technology are transformative for patients with spinal cord injuries, ALS, and other conditions that affect motor function. In clinical trials, paralyzed patients were able to control robotic arms with the same dexterity as their natural limbs, complete with force feedback and tactile sensation.\n\nBeyond motor applications, the research team has demonstrated the system's potential in treating depression and anxiety disorders. By monitoring neural activity patterns associated with mood disorders, the system can provide targeted electrical stimulation to specific brain regions, effectively acting as a 'neural pacemaker' for mental health.\n\nDr. Michael Rodriguez, a neurologist at Massachusetts General Hospital who was not involved in the study, calls the results 'nothing short of miraculous.' He notes that 'patients who haven't felt touch in decades are now able to feel texture, temperature, and pressure through the neural interface.'"
-      },
-      {
-        type: "section",
-        heading: "Ethical Considerations",
-        content: "While the technological achievement is remarkable, it raises important questions about privacy, autonomy, and the future of human enhancement. The system's ability to read and interpret thoughts with high accuracy brings up concerns about mental privacy and the potential for misuse.\n\nThe research team has worked closely with bioethicists to develop strict protocols for data handling and patient consent. All neural data is encrypted and processed locally on the device, ensuring that thoughts remain private. Additionally, the system includes built-in safeguards that allow patients to maintain full control over when the interface is active.\n\n'We're not just building technology; we're building the foundation for how humans and AI will coexist in the future,' states Dr. Chen. 'Every decision we make now will impact generations of users, so we must proceed thoughtfully and responsibly.'"
-      },
-      {
-        type: "section",
-        heading: "Future Implications",
-        content: "Looking ahead, the research team envisions a world where neural interfaces become as common as smartphones. The technology could enable direct brain-to-brain communication, enhanced cognitive abilities, and seamless integration between human consciousness and digital systems.\n\nHowever, widespread adoption is still years away. The current system requires surgical implantation and costs approximately $250,000 per patient. The team is working on non-invasive alternatives using advanced sensor technology that could make the benefits accessible to a broader population.\n\nRegulatory approval from the FDA is expected to take 3-5 years, with the first commercial applications likely focusing on medical treatments for paralysis and neurological disorders. The potential market for neural interface technology is projected to reach $27 billion by 2030, according to industry analysts.\n\nAs we stand on the brink of this neural revolution, one thing is certain: the boundary between human and artificial intelligence is becoming increasingly blurred, opening up possibilities we're only beginning to imagine."
+  const params = useParams();
+  const router = useRouter();
+
+  const [article, setArticle] = useState<Article>({
+    id: 0,
+    title: "",
+    subtitle: "",
+    createdAt: "",
+    readTime: 0,
+    views: 0,
+    categories: [],
+    groundbreaking: false,
+    content: []
+  });
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/articles/${params.articleId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch news: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("article: ", data);
+
+        setArticle(data.article);
+      } catch (error) {
+        console.error('Error fetching news for date:', error);
+        setArticle({});
       }
-    ]
-  };
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  const formatViews = (views) => {
-    if (views > 1000000) return `${(views / 1000000).toFixed(1)}M`;
-    if (views > 1000) return `${(views / 1000).toFixed(1)}K`;
-    return views.toString();
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      "AI Research": "bg-blue-500/20 text-blue-300 border border-blue-500/30",
-      "Neurotechnology": "bg-purple-500/20 text-purple-300 border border-purple-500/30",
-      "Medical Innovation": "bg-green-500/20 text-green-300 border border-green-500/30",
     };
-    return colors[category] || "bg-slate-500/20 text-slate-300 border border-slate-500/30";
+
+    fetchArticle();
+  }, []);
+
+  const formatViews = (views: number): string => {
+    if (views < 1000) {
+      return views.toString();
+    } else if (views < 10000) {
+      return (views / 1000).toFixed(1) + 'K';
+    } else if (views < 1000000) {
+      return Math.floor(views / 1000) + 'K';
+    } else {
+      return (views / 1000000).toFixed(1) + 'M';
+    }
   };
+
+  const getCategoryColor = (category: string): string => {
+    const colors: { [key: string]: string } = {
+      'Technology': 'text-blue-400 bg-blue-400/10',
+      'Entertainment': 'text-rose-400 bg-rose-400/10',
+      'Science': 'text-purple-400 bg-purple-400/10',
+      'Politics': 'text-green-400 bg-green-400/10',
+      'Business': 'text-yellow-400 bg-yellow-400/10 '
+    };
+    return colors[category] || 'text-gray-400 bg-gray-400/10';
+  };
+
+  const formatReadTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    
+    if (minutes > 0 && remainingSeconds > 0) {
+      return `${minutes} min${minutes > 1 ? 's' : ''} ${remainingSeconds} sec`;
+    } else if (minutes > 0) {
+      return `${minutes} min${minutes > 1 ? 's' : ''}`;
+    } else {
+      return `${remainingSeconds} sec`;
+    }
+  };
+
+  const handleReturn = () => {
+    router.push("/")
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -74,7 +106,9 @@ export default function ArticlePage() {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors group">
+              <button className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors group"
+                onClick={handleReturn}  
+              >
                 <ArrowLeft className="w-5 h-5 text-slate-300 group-hover:text-white" />
               </button>
               <div className="flex items-center space-x-3">
@@ -130,16 +164,18 @@ export default function ArticlePage() {
 
           <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400 p-6 bg-gradient-to-r from-slate-800/40 to-slate-700/20 backdrop-blur-sm rounded-2xl border border-slate-700/30">
             <div className="flex items-center space-x-2">
-              <User className="w-4 h-4" />
-              <span>By {article.author}</span>
-            </div>
-            <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4" />
-              <span>{formatTimeAgo(article.publishedAt)}</span>
+              <span>
+                Generated on {new Date(article.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </span>
             </div>
             <div className="flex items-center space-x-2">
               <Clock className="w-4 h-4" />
-              <span>{article.readTime} min read</span>
+              <span>{formatReadTime(article.readTime)} read</span>
             </div>
             <div className="flex items-center space-x-2">
               <Eye className="w-4 h-4" />
@@ -170,28 +206,6 @@ export default function ArticlePage() {
               </div>
             </section>
           ))}
-        </div>
-
-        {/* Article Footer */}
-        <div className="mt-12 p-6 bg-gradient-to-r from-slate-800/60 via-slate-800/40 to-slate-700/20 backdrop-blur-sm rounded-2xl border border-slate-700/30">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-400">
-              <p>Published on {new Date(article.publishedAt).toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</p>
-              <p className="mt-1">Article ID: #{article.id.toString().padStart(4, '0')}</p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg border border-blue-500/30 transition-colors">
-                Share Article
-              </button>
-              <button className="px-4 py-2 bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg border border-slate-600/30 transition-colors">
-                Save for Later
-              </button>
-            </div>
-          </div>
         </div>
       </main>
     </div>

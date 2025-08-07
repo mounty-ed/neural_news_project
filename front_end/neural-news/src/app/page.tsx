@@ -158,11 +158,11 @@ const NewsWebsite: React.FC = () => {
     const remainingSeconds = seconds % 60;
     
     if (minutes > 0 && remainingSeconds > 0) {
-      return `${minutes} min${minutes > 1 ? 's' : ''} ${remainingSeconds} sec${remainingSeconds > 1 ? 's' : ''}`;
+      return `${minutes} min${minutes > 1 ? 's' : ''} ${remainingSeconds} sec`;
     } else if (minutes > 0) {
       return `${minutes} min${minutes > 1 ? 's' : ''}`;
     } else {
-      return `${remainingSeconds} sec${remainingSeconds > 1 ? 's' : ''}`;
+      return `${remainingSeconds} sec`;
     }
   };
 
@@ -324,7 +324,7 @@ const NewsWebsite: React.FC = () => {
                       <div className="flex items-center space-x-4">
                         <span className="flex items-center space-x-1">
                           <Clock className="w-4 h-4" />
-                          <span>{formatReadTime(article.readTime)}</span>
+                          <span>{formatReadTime(article.readTime)} read</span>
                         </span>
                         <span className="flex items-center space-x-1">
                           <Eye className="w-4 h-4" />
