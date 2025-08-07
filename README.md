@@ -58,7 +58,7 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 ### Clone Repository
 
 ```bash
-git clone https://github.com/your-org/neuro-news.git
+git clone https://github.com/mounty-ed/neural_news_project.git
 cd neuro-news
 ```
 
