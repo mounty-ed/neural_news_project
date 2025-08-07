@@ -1,16 +1,19 @@
 from langgraph.graph import StateGraph, END
 from typing import Dict, List, Optional, TypedDict
-from langchain_core.tools import BaseTool
 from langgraph.prebuilt import ToolNode
 from langchain_ollama import ChatOllama
 from langchain_core.messages import BaseMessage
+from langchain_openai import ChatOpenAI
 import feedparser
-from datetime import datetime, timedelta
-import json
+from datetime import datetime, timedelta, timezone
+import json, os, time
 from pydantic import BaseModel, Field
 from typing import List, Literal
-from langchain_core.tools import tool
+from back_end.agents.article_agent import ArticleAgent
+from back_end.firestore_utils import create_article, create_newsletter_date
+from dotenv import load_dotenv, find_dotenv
 
+load_dotenv(find_dotenv())
 
 # State definition for the agent
 class NewsAgentState(TypedDict):
@@ -34,42 +37,8 @@ class Topic(BaseModel):
 
 class TopicsResponse(BaseModel):
     """Collection of trending news topics"""
-    topics: List[Topic] = Field(description="List of 3-5 trending topics identified from the RSS feeds")
+    topics: List[Topic] = Field(description="List of 1-3 trending topics identified from the RSS feeds")
     
-
-# ========================================== TOOL DEFINITIONS ==========================================
-
-@tool
-def web_search(query: str) -> str:
-    """
-    Search the web for current information about a topic.
-    
-    Args:
-        query: The search query string
-        
-    Returns:
-        JSON string with search results containing titles, snippets, and URLs
-    """
-    # Placeholder implementation - replace with actual web search API
-    # This could be Tavily, SerpAPI, DuckDuckGo, etc.
-    
-    # Simulated search results for now
-
-
-
-@tool
-def news_aggregator(topic: str) -> str:
-    """
-    Aggregate recent news articles about a specific topic.
-    
-    Args:
-        topic: The topic to search for
-        
-    Returns:
-        JSON string with aggregated news articles
-    """
-    # Placeholder implementation
-
 
 # ========================================== LANGGRAPH CLASS ==========================================
 
@@ -78,27 +47,20 @@ class NewsGenerationAgent:
 
     # ========================================== INITIALIZATION ==========================================
 
-    def __init__(self):
+    # The default model can have problems with structured outputs use another model if deployed
+    def __init__(self, api_key: str, model: str = "openrouter/horizon-beta"):
         """Updated initialization with ReAct agent setup"""
         
-        # Initialize tools
-        self.tools = [web_search, news_aggregator]
-        self.tool_node = ToolNode(self.tools)
+        self.api_key = api_key
 
         # Topic analysis LLM (structured output)
-        self.topic_llm = ChatOllama(
-            base_url="http://localhost:11434",
-            model="qwen3:8b",
-            temperature=0.3, 
+        self.llm = ChatOpenAI(
+            model=model, 
+            temperature=0.3,
+            api_key=api_key,
+            base_url="https://openrouter.ai/api/v1"
         ).with_structured_output(TopicsResponse)
         
-        # Article generation LLM (ReAct agent)
-        self.article_llm = ChatOllama(
-            base_url="http://localhost:11434",
-            model="qwen3:8b",
-            temperature=0.4,
-        ).bind_tools(self.tools)
-                
         # Build the graph
         self.graph = self._build_graph()
 
@@ -110,9 +72,7 @@ class NewsGenerationAgent:
         workflow.add_node("data_collection", self.data_collection_node)
         workflow.add_node("prepare_topics", self.prepare_topics_node)
         workflow.add_node("article_generation", self.article_generation_node)
-        workflow.add_node("quality_control", self.quality_control_node)
-        workflow.add_node("tools", self.tool_node)
-        workflow.add_node("publication", self.publication_node)
+
         
         # Define the workflow edges
         workflow.set_entry_point("data_collection")
@@ -120,20 +80,8 @@ class NewsGenerationAgent:
         # Conditional edge: if needs more data, go back to data collection
         workflow.add_edge("data_collection", "prepare_topics")
         workflow.add_edge("prepare_topics", "article_generation")
-        workflow.add_edge("article_generation", "quality_control")
-        
-        # Conditional edge: if quality issues, go back to article generation
-        workflow.add_conditional_edges(
-            "quality_control",
-            self._should_regenerate_articles,
-            {
-                "regenerate": "article_generation",
-                "proceed": "publication"
-            }
-        )
-        
-        workflow.add_edge("publication", END)
-        
+        workflow.add_edge("article_generation", END)
+                
         return workflow.compile()
     
 
@@ -259,7 +207,7 @@ class NewsGenerationAgent:
         articles_text = "\n---\n".join(article_summaries)
         
         prompt = f"""
-        Analyze the following news articles and identify 3-5 key trending topics that would make compelling news stories.
+        Analyze the following news articles and identify 1-3 key trending topics that would make compelling news stories.
         
         RSS ARTICLES:
         {articles_text}
@@ -271,18 +219,18 @@ class NewsGenerationAgent:
         4. Can be categorized into the allowed categories
         
         For each topic, provide:
-        - A lengthy and concise summary (3-5 sentences) of what the topic covers
+        - A lengthy and concise summary (5-7 sentences) of what the topic covers. Give context of the date and location of topics if possible.
         - Relevant categories from this list ONLY: ["Technology", "Business", "Science", "Entertainment", "Politics"]
         
         Respond ONLY in JSON format like this. No extra explanations or comments:
         {TopicsResponse.model_json_schema()}
         
-        Make sure categories are EXACTLY from the allowed list. Generate 3-5 topics total.
+        Make sure categories are EXACTLY from the allowed list. Generate 1-3 topics total.
         """
         
         try:
             print("    🤖 Analyzing RSS data with LLM...")
-            response = self.topic_llm.invoke(prompt)
+            response = self.llm.invoke(prompt)
             
             # The response is already a TopicsResponse object, no need to parse JSON
             topics = []
@@ -315,44 +263,38 @@ class NewsGenerationAgent:
         """
         print("✍️ Executing Article Generation Node")
         
-        
+        try:
+            article_agent = ArticleAgent(api_key=self.api_key)
+
+            create_newsletter_date()
+
+            for topic in state["topics"]:
+                article = article_agent.invoke(topic)
+                final_article = article["final_article"]
+                print("Article: ", final_article)
+
+                article_result = create_article(
+                    article_id=str(int(time.time())),
+                    title=final_article.get("title"),
+                    subtitle=final_article.get("subtitle"),
+                    categories=final_article.get("categories"),
+                    content=final_article.get("sections"),
+                    sources=final_article.get("sources"),
+                    date=str(datetime.now(timezone.utc).date().isoformat()),
+                    groundbreaking=final_article.get("groundbreaking", False),
+                )
+
+                print("Article Creation: ", article_result)
+        except Exception as e:
+            print(f"    ⚠️ Error generating articles with ArticleAgent: {e}")
+            raise Exception("Error generating articles with ArticleAgent")
         
         return state
-    
-    def quality_control_node(self, state: NewsAgentState) -> NewsAgentState:
-        """
-        Node 4: Quality Control & Editorial Review
-        Reviews and scores article quality
-        """
-        print("🔍 Executing Quality Control Node")
-        
-        return state
-    
-    def publication_node(self, state: NewsAgentState) -> NewsAgentState:
-        """
-        Node 5: Publication
-        Publishes to database
-        """
-        print("📅 Executing Publication Node")
-        
-        
-        return state
+
 
 
     # ========================================== HELPER METHODS ==========================================
 
-    
-    def _should_regenerate_articles(self, state: NewsAgentState) -> str:
-        """Decide whether to regenerate articles or proceed to publication"""
-        quality_scores = state.get("quality_scores", {})
-        needs_revision = quality_scores.get("needs_revision", 0)
-        iteration_count = state.get("iteration_count", 0)
-        max_iterations = state.get("max_iterations", 3)
-        
-        if needs_revision > 0 and iteration_count < max_iterations:
-            state["iteration_count"] = iteration_count + 1
-            return "regenerate"
-        return "proceed"
     
     def run(self, initial_state: Optional[NewsAgentState] = None) -> NewsAgentState:
         """Execute the complete news generation workflow"""
@@ -373,17 +315,21 @@ class NewsGenerationAgent:
         try:
             png_data = self.graph.get_graph().draw_mermaid_png()
             
-            with open("therapy_workflow.png", "wb") as f:
+            with open("news_workflow.png", "wb") as f:
                 f.write(png_data)
             
-            print("Workflow saved as therapy_workflow.png")
+            print("Workflow saved as news_workflow.png")
             
         except Exception as e:
             print(f"Install graphviz: pip install graphviz")
 
 # Usage example
 if __name__ == "__main__":
-    agent = NewsGenerationAgent()
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    if not openrouter_api_key:
+        raise ValueError("Failed to load api key")
+
+    agent = NewsGenerationAgent(api_key=openrouter_api_key)
     agent.save_workflow_image()
     
     # Run the agent

@@ -2,8 +2,37 @@ from datetime import datetime, timezone
 from back_end.extensions.firebase import db
 from firebase_admin import firestore
 from typing import Dict, List, Any, Optional
+import re
 
-def create_newsletter_date_document():
+def increment_newsletter_date():
+    """
+    Increments the `articleCount` field in a Firestore document
+    under newsletter_dates/YYYY-MM-DD. If the document doesn’t exist yet,
+    it will be created with articleCount = 1.
+    """
+    try:
+        # Compute today's date string
+        now_utc = datetime.now(timezone.utc)
+        date_str = now_utc.strftime('%Y-%m-%d')
+
+        # Reference the document
+        doc_ref = db.collection('newsletter_dates').document(date_str)
+
+        # Increment articleCount by 1
+        doc_ref.set(
+            {'articleCount': firestore.Increment(1)},
+            merge=True
+        )
+
+        return {'success': True}
+
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Failed to increment newsletter_dates document: {e}',
+        }
+
+def create_newsletter_date():
     """
     Creates a document in Firestore under newsletter_dates/[current_date] with today's date.
     
@@ -20,7 +49,7 @@ def create_newsletter_date_document():
         doc_data = {
             'date': date_str,
             'createdAt': current_date,
-            'articleCount': 1,
+            'articleCount': 0,
         }
         
         # Create document reference using date as document ID
@@ -38,8 +67,8 @@ def create_newsletter_date_document():
         }
     
 
-def create_article(article_id: str, title: str, excerpt: str, categories: List[str], date: str,
-                            content: str, groundbreaking: bool = False):
+def create_article(article_id: str, title: str, subtitle: str, categories: List[str], date: str,
+                            content: Dict, sources: List[str], groundbreaking: bool = False):
     """
     Creates a document in Firestore under articles/[article_id] with the specified fields.
     Also creates a subcollection 'content' with the full article content.
@@ -47,10 +76,11 @@ def create_article(article_id: str, title: str, excerpt: str, categories: List[s
     Args:
         article_id (str): Unique identifier for the article
         title (str): Article title
-        excerpt (str): Article excerpt/summary
-        category (str): Article category (Technology | Science | Entertainment | Politics)
+        subtitle (str): Article subtitle/summary
+        categories (List[str]): Article category (Technology | Science | Entertainment | Politics | Business)
+        sources (List[str]): Article sources
         date (str): Article date in YYYY-MM-DD format
-        content (str): Full article content. Creates content subcollection.
+        content (Dict): Full article content. Creates content subcollection.
         groundbreaking (bool, optional): Whether the article is groundbreaking. Defaults to False.
     
     Returns:
@@ -73,8 +103,9 @@ def create_article(article_id: str, title: str, excerpt: str, categories: List[s
         # Create document data
         doc_data = {
             'title': title,
-            'excerpt': excerpt,
+            'subtitle': subtitle,
             'categories': categories,
+            'sources': sources,
             'date': date,
             'readTime': calculate_read_time(content),
             'views': 0,
@@ -94,7 +125,9 @@ def create_article(article_id: str, title: str, excerpt: str, categories: List[s
         }
         content_ref = doc_ref.collection('content').document('main')
         content_ref.set(content_data)
-        
+
+        increment_newsletter_date()
+
         return {
             'success': True,
             'article_id': article_id,
@@ -107,46 +140,52 @@ def create_article(article_id: str, title: str, excerpt: str, categories: List[s
             'error': f'Failed to create article document: {str(e)}',
         }
 
-def calculate_read_time(content: str, words_per_minute: int = 200) -> int:
+
+def calculate_read_time(
+    sections: List[Dict],
+    words_per_minute: int = 200
+) -> int:
     """
-    Calculate estimated read time in seconds based on content length.
+    Estimate reading time in **seconds** for a list of sections.
     
     Args:
-        content (str): The article content
-        words_per_minute (int): Average reading speed. Defaults to 200 WPM.
-    
+        sections: List of dicts with structure [{'heading': '...', 'content': '...'}, ...]
+        words_per_minute: Average reading speed (default 200 wpm).
+        
     Returns:
-        int: Estimated read time in seconds
+        Estimated read time, rounded up to nearest minute in seconds,
+        with a minimum of 60 seconds.
     """
-    if not content:
-        return 0
+    # Count total words across all sections
+    total_words = sum(
+        len(re.findall(r'\w+', section['content']))
+        for section in sections
+        if isinstance(section, dict) and 'content' in section
+    )
     
-    # Count words (split by whitespace and filter out empty strings)
-    word_count = len([word for word in content.split() if word.strip()])
-    
-    # Calculate minutes and convert to seconds
-    read_time_minutes = word_count / words_per_minute
-    read_time_seconds = int(read_time_minutes * 60)
-    
-    # Minimum read time of 60 seconds
-    return max(read_time_seconds, 60)
-    
+    # Compute minutes
+    minutes = total_words / words_per_minute if total_words > 0 else 1
+    seconds = int(minutes * 60)
+    # Always at least one minute (60 seconds)
+    return max(seconds, 60)
+
 
 # Example usage:
 if __name__ == "__main__":
     # Create a newsletter_dates document for today
-    newsletter_result = create_newsletter_date_document()
+    newsletter_result = create_newsletter_date()
     print("Newsletter Date Creation:", newsletter_result)
     
     # Create an example article document
     article_result = create_article(
         article_id="2025-08-04-sigma sigma boy",
         title="Revolutionary AI Model Breaks New Ground",
-        excerpt="Scientists have developed a groundbreaking AI model that demonstrates unprecedented capabilities in natural language understanding.",
+        subtitle="Scientists have developed a groundbreaking AI model that demonstrates unprecedented capabilities in natural language understanding.",
         categories=["Technology"],
         groundbreaking=True,
+        sources=["idk.com"],
         date="2025-08-04",
-        content="The ohio sigma starts rizzing up the gyatt in front of the level 10 rizzler gyatt ohio."
+        content={}
     )
     print("Article Creation:", article_result)
 
