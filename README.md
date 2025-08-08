@@ -51,9 +51,8 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 
 * Python 3.10+
 * Node.js 18+
-* Firebase project with Firestore enabled
-* Firebase Service Account JSON
-* Ollama installed locally with the `qwen3:8b` model loaded
+* Firebase project with Firestore enabled and Firebase Service Account to test front end and back end
+* Ollama installed locally with the `qwen3:8b` model loaded for testing the LangGraph workflow
 
 ### Clone Repository
 
@@ -87,6 +86,16 @@ cd neuro-news
 
 ## Running the Project
 
+> **Note:** Running the whole application can be difficult and require a lot of time to set up the prerequisites. You can set up and run the LangGraph workflow to test the main functionality of the app without setting up other features.
+
+### LangGraph Workflow
+
+Run the main news agent module to test the end-to-end LangGraph logic:
+
+```bash
+python -m back_end.agents.news_agent
+```
+
 ### Flask Backend
 
 1. Ensure `firebase-service-account.json` is placed in the `back_end/` directory.
@@ -96,13 +105,6 @@ cd neuro-news
    python -m back_end.app
    ```
 
-### LangGraph Workflow
-
-Run the main news agent module to test the end-to-end LangGraph logic:
-
-```bash
-python -m back_end.agents.news_agent
-```
 
 ### Frontend
 
