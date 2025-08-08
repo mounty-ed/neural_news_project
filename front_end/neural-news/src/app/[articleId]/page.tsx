@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Share2, Bookmark, Clock, Eye, Calendar, User, TrendingUp } from 'lucide-react';
+import SourcesModal from "@/components/SourcesModal";
 
 type ArticleSection = {
   heading: string;
@@ -16,26 +17,31 @@ type Article = {
   createdAt: string;
   readTime: number;
   views: number;
+  sources: string[];
   categories: string[];
   groundbreaking: boolean;
   content: ArticleSection[];
+};
+
+const initialArticle: Article = {
+  id: 0,
+  title: "",
+  subtitle: "",
+  createdAt: new Date().toISOString(),
+  readTime: 0,
+  views: 0,
+  categories: [],
+  groundbreaking: false,
+  content: [],
+  sources: [],
 };
 
 export default function ArticlePage() {
   const params = useParams();
   const router = useRouter();
 
-  const [article, setArticle] = useState<Article>({
-    id: 0,
-    title: "",
-    subtitle: "",
-    createdAt: "",
-    readTime: 0,
-    views: 0,
-    categories: [],
-    groundbreaking: false,
-    content: []
-  });
+  const [article, setArticle] = useState<Article>(initialArticle);
+  const [showSources, setShowSources] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -49,15 +55,19 @@ export default function ArticlePage() {
         const data = await response.json();
         console.log("article: ", data);
 
-        setArticle(data.article);
+        // Expecting { article: {...} } from API; if API returns directly, adjust accordingly
+        setArticle(data.article ?? data);
       } catch (error) {
         console.error('Error fetching news for date:', error);
-        setArticle({});
+        // restore to initial safe article shape
+        setArticle(initialArticle);
       }
     };
 
-    fetchArticle();
-  }, []);
+    if (params?.articleId) {
+      fetchArticle();
+    }
+  }, [params?.articleId]);
 
   const formatViews = (views: number): string => {
     if (views < 1000) {
@@ -101,13 +111,14 @@ export default function ArticlePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+      
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors group"
-                onClick={handleReturn}  
+                onClick={handleReturn}
               >
                 <ArrowLeft className="w-5 h-5 text-slate-300 group-hover:text-white" />
               </button>
@@ -162,7 +173,7 @@ export default function ArticlePage() {
             {article.subtitle}
           </p>
 
-          <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400 p-6 bg-gradient-to-r from-slate-800/40 to-slate-700/20 backdrop-blur-sm rounded-2xl border border-slate-700/30">
+          <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400 p-4 bg-gradient-to-r from-slate-800/40 to-slate-700/20 backdrop-blur-sm rounded-2xl border border-slate-700/30">
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4" />
               <span>
@@ -173,13 +184,27 @@ export default function ArticlePage() {
                 })}
               </span>
             </div>
+
             <div className="flex items-center space-x-2">
               <Clock className="w-4 h-4" />
               <span>{formatReadTime(article.readTime)} read</span>
             </div>
+
             <div className="flex items-center space-x-2">
               <Eye className="w-4 h-4" />
               <span>{formatViews(article.views)} views</span>
+            </div>
+
+            {/* Sources button added inside this info box */}
+            <div className="ml-auto">
+              <button
+                onClick={() => setShowSources(true)}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-800/60 hover:bg-slate-800/80 text-sm text-slate-200 border border-slate-700/40"
+                aria-label="Open sources"
+              >
+                Sources
+                <span className="text-xs text-slate-400">({(article.sources || []).length})</span>
+              </button>
             </div>
           </div>
         </div>
@@ -208,6 +233,13 @@ export default function ArticlePage() {
           ))}
         </div>
       </main>
+
+      {/* Sources modal */}
+      <SourcesModal
+        isOpen={showSources}
+        onClose={() => setShowSources(false)}
+        sources={article.sources}
+      />
     </div>
   );
 }
