@@ -28,6 +28,7 @@ interface NewsArticle {
 
 const NewsWebsite: React.FC = () => {
   const router = useRouter()
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [newsletterDates, setNewsletterDates] = useState<NewsletterDate[]>([]);
@@ -39,7 +40,7 @@ const NewsWebsite: React.FC = () => {
   useEffect(() => {
     const fetchNewsletterDates = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/news');
+        const response = await fetch(`${API_BASE}/api/news`);
         const data = await response.json();
         console.log(data)
         setNewsletterDates(data);
@@ -63,7 +64,7 @@ const NewsWebsite: React.FC = () => {
       setError(null);
       
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/news/${selectedDate}`);
+        const response = await fetch(`${API_BASE}/api/news/${selectedDate}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch news: ${response.status}`);

@@ -39,6 +39,7 @@ const initialArticle: Article = {
 export default function ArticlePage() {
   const params = useParams();
   const router = useRouter();
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
   const [article, setArticle] = useState<Article>(initialArticle);
   const [showSources, setShowSources] = useState(false);
@@ -46,7 +47,7 @@ export default function ArticlePage() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/articles/${params.articleId}`);
+        const response = await fetch(`${API_BASE}/api/articles/${params.articleId}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch news: ${response.status}`);
@@ -55,11 +56,9 @@ export default function ArticlePage() {
         const data = await response.json();
         console.log("article: ", data);
 
-        // Expecting { article: {...} } from API; if API returns directly, adjust accordingly
         setArticle(data.article ?? data);
       } catch (error) {
         console.error('Error fetching news for date:', error);
-        // restore to initial safe article shape
         setArticle(initialArticle);
       }
     };
