@@ -1,16 +1,16 @@
 from flask import Flask
 from flask_cors import CORS
-from back_end.config import Config
 from back_end.routes.news import news_bp
 from back_end.routes.article import article_bp
+import os
 
 def create_app():
     app = Flask(__name__)
-    
-    CORS(app, origins=["https://neuro-news-back-end.onrender.com"])
 
-    app.config.from_object(Config)
+    origins = os.getenv('CORS_ORIGINS', '')
     
+    CORS(app, origins=[origins])
+
     app.register_blueprint(news_bp, url_prefix="/api")
     app.register_blueprint(article_bp, url_prefix="/api")
 

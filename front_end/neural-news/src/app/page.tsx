@@ -40,6 +40,7 @@ const NewsWebsite: React.FC = () => {
   useEffect(() => {
     const fetchNewsletterDates = async () => {
       try {
+        console.log(`${API_BASE}/api/news`)
         const response = await fetch(`${API_BASE}/api/news`);
         const data = await response.json();
         console.log(data)
