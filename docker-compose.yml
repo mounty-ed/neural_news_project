@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: back_end/Dockerfile
+    container_name: neural-news-backend
+    ports:
+      - "5000:5000"
+    # for dev only: mount into /app/back_end (NOT /app)
+    volumes:
+      - ./back_end:/app/back_end:ro
+      - ./agents:/app/agents:ro
+    environment:
+      - PYTHONPATH=/app
+
+  frontend:
+    build:
+      context: ./front_end/neural-news
+      dockerfile: Dockerfile
+    container_name: neural-news-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

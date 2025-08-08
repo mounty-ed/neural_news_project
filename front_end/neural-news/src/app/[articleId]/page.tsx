@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Share2, Bookmark, Clock, Eye, Calendar, User, TrendingUp } from 'lucide-react';
-import SourcesModal from "@/components/SourcesModal";
+import { SourcesModal } from "@/components/SourcesModal";
 
 type ArticleSection = {
   heading: string;

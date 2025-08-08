@@ -15,7 +15,7 @@ function isUrl(s: string) {
   }
 }
 
-export default function SourcesModal({ isOpen, onClose, sources }): React.FC<Props> {
+export const SourcesModal: React.FC<Props> = ({ isOpen, onClose, sources }) => {
   // lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {

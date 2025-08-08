@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from back_end.extensions.firebase import db
+from agents.firebase import db
 from firebase_admin import firestore
 from typing import Dict, List, Any, Optional
 import re
