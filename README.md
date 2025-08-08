@@ -58,7 +58,7 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 
 ```bash
 git clone https://github.com/mounty-ed/neural_news_project.git
-cd neuro-news
+cd neural_news_project
 ```
 
 ### Environment Configuration
@@ -92,8 +92,10 @@ cd neuro-news
 
 Run the main news agent module to test the end-to-end LangGraph logic:
 
+> **Note:** Running the workflow without Firebase set up will require the firestore writing code to be commented out.
+
 ```bash
-python -m back_end.agents.news_agent
+python -m agents.news_agent
 ```
 
 ### Flask Backend
