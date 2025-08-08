@@ -22,7 +22,6 @@ RUN pip install --no-cache-dir gunicorn
 # Copy only the folders we need into the image.
 # This keeps the image minimal and avoids copying things outside the build context.
 COPY back_end /app/back_end
-COPY agents /app/agents
 
 EXPOSE 5000
 

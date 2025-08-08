@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: back_end/Dockerfile
+      dockerfile: Dockerfile
     container_name: neural-news-backend
     ports:
       - "5000:5000"
