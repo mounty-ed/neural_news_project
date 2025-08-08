@@ -139,7 +139,7 @@ To automate daily news generation:
 
    ```bash
    source /path/to/neuro-news/.venv/bin/activate
-   python -m back_end.agents.news_agent
+   python -m agents.news_agent
    ```
 2. Verify output in Firestore and monitor logs for any errors.
 
