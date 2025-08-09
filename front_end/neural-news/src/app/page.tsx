@@ -30,6 +30,8 @@ const NewsWebsite: React.FC = () => {
   const router = useRouter()
   const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
+  console.log("✅ Build-time API URL:", process.env.NEXT_PUBLIC_API_URL);
+
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [newsletterDates, setNewsletterDates] = useState<NewsletterDate[]>([]);
   const [currentNews, setCurrentNews] = useState<NewsArticle[]>([]);
