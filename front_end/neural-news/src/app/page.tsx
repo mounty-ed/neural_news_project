@@ -28,7 +28,7 @@ interface NewsArticle {
 
 const NewsWebsite: React.FC = () => {
   const router = useRouter()
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://neuro-news-back-end.onrender.com';
 
   console.log("✅ Build-time API URL:", process.env.NEXT_PUBLIC_API_URL);
 

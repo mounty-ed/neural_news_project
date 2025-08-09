@@ -39,7 +39,7 @@ const initialArticle: Article = {
 export default function ArticlePage() {
   const params = useParams();
   const router = useRouter();
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://neuro-news-back-end.onrender.com';
 
   const [article, setArticle] = useState<Article>(initialArticle);
   const [showSources, setShowSources] = useState(false);
