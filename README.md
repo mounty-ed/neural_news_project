@@ -1,22 +1,25 @@
 # Neuro News
 
-An AI-driven platform that automates end-to-end news creation using LangGraph, React, Firebase, and multiple AI models. Neuro News continuously discovers trending topics, orchestrates multi-agent research and writing workflows, and publishes articles to a real-time frontend.
+An AI-driven news platform for social good that automates end-to-end journalism workflows using LangGraph, React, Firebase, and multiple AI models. Neuro News continuously discovers impactful topics, orchestrates multi-agent research and writing pipelines, and publishes verified articles to a real-time frontend. The platform is designed to combat misinformation, increase access to quality reporting, and amplify stories with societal impact.
 
 ---
 
 ## Table of Contents
 
+* [Mission & Social Impact](#mission--social-impact)
 * [Features](#features)
 * [Architecture Overview](#architecture-overview)
+* [Folder Structure](#folder-structure)
 * [Setup & Installation](#setup--installation)
 
   * [Prerequisites](#prerequisites)
   * [Clone Repository](#clone-repository)
   * [Environment Configuration](#environment-configuration)
-* [Running the Project](#running-the-project)
+* [Running with Docker](#running-with-docker)
+* [Running without Docker](#running-without-docker)
 
-  * [Flask Backend](#flask-backend)
   * [LangGraph Workflow](#langgraph-workflow)
+  * [Flask Backend](#flask-backend)
   * [Frontend](#frontend)
 * [Data & Models](#data--models)
 * [Daily Automation](#daily-automation)
@@ -24,12 +27,25 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 
 ---
 
+## Mission & Social Impact
+
+Neuro News is more than a tech demo—it's a tool for **responsible AI-driven journalism**. The project focuses on:
+
+* **Fighting misinformation** by combining multiple AI agents with fact-checking and credible sources.
+* **Promoting global awareness** of important but underreported issues.
+* **Enabling local communities** to easily publish high-quality, verified news.
+
+Although the mission is still a work in progress, Neuro News represents meaningful progress toward these goals.
+
+---
+
 ## Features
 
-* **Automated Topic Discovery**: Ingests RSS feeds and web search to identify high-impact news topics.
-* **Multi-Agent Workflow**: Master and subordinate LangGraph agents outline, research, and draft articles.
-* **Real-Time Frontend**: React app with Firebase Authentication and Firestore for live updates.
-* **Modular & Extensible**: Easily swap AI models or add new data sources.
+* **Automated Topic Discovery**: Monitors news feeds and search to find high-impact, socially relevant stories.
+* **Multi-Agent AI Workflow**: Orchestrated LangGraph agents perform outlining, research, and drafting.
+* **Real-Time Publishing**: Next.js frontend with Firebase for instant updates.
+* **Dockerized Deployment**: One-command startup for backend, frontend, and agents.
+* **Modular & Extensible**: Swap AI models, data sources, and publishing destinations.
 
 ---
 
@@ -39,9 +55,26 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 
 ![News Workflow](news_workflow.png)
 
-### Article Generation Workflow
+### Article Generation Workflow 
+(within article_generation of News Generation Workflow)
 
 ![Article Workflow](article_workflow.png)
+
+---
+
+## Folder Structure
+
+```
+.
+├── Dockerfile                  # Root-level build config (optional)
+├── docker-compose.yml          # Orchestrates multi-container setup
+├── agents/                     # AI agent logic & workflows
+├── back_end/                   # Flask API, routes, extensions
+├── front_end/neural-news/      # Next.js frontend app
+├── requirements.txt            # Backend dependencies
+├── article_workflow.png        # Diagram
+├── news_workflow.png           # Diagram
+```
 
 ---
 
@@ -51,8 +84,9 @@ An AI-driven platform that automates end-to-end news creation using LangGraph, R
 
 * Python 3.10+
 * Node.js 18+
-* Firebase project with Firestore enabled and Firebase Service Account to test front end and back end
-* Ollama installed locally with the `qwen3:8b` model loaded for testing the LangGraph workflow
+* Docker & Docker Compose
+* Firebase project with Firestore enabled
+* Ollama with `qwen3:8b` model for local LangGraph testing
 
 ### Clone Repository
 
@@ -63,88 +97,87 @@ cd neural_news_project
 
 ### Environment Configuration
 
-1. Create a Python virtual environment:
+Create a `.env` file in the root:
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+```ini
+TAVILY_API_KEY=your-tavily-key
+OPENROUTER_API_KEY=your-openrouter-key
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
 
-2. Place your Firebase service account key in `back_end/firebase-service-account.json`.
+Place your Firebase service account JSON in:
 
-3. Create a `.env` and set the following variables:
-
-   ```ini
-   TAVILY_API_KEY=your-tavily-key
-   OPENROUTER_API_KEY=your-openrouter-key
-   ```
-
-> **Note:** Ollama must be running locally with the `qwen3:8b` model. To use different or higher-capacity models, modify the `.env` values and update model references in `back_end/agents/*.py` as needed.
+* `back_end/etc/secrets/firebase-service-account.json`
+* `agents/firebase-service-account.json`
 
 ---
 
-## Running the Project
+## Running Website with Docker
 
-> **Note:** Running the whole application can be difficult and require a lot of time to set up the prerequisites. You can set up and run the LangGraph workflow to test the main functionality of the app without setting up other features.
+Spin up the entire stack:
 
-### LangGraph Workflow
+```bash
+docker-compose up --build
+```
 
-Run the main news agent module to test the end-to-end LangGraph logic:
+This starts:
 
-> **Note:** Running the workflow without Firebase set up will require the firestore writing code to be commented out.
+* Flask backend (port 5000)
+* Next.js frontend (port 3000)
+
+---
+
+## Running Website without Docker
+
+### Flask Backend
+
+Install backend dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the backend:
+
+```bash
+python -m back_end.app
+```
+
+### Frontend
+
+```bash
+cd front_end/neural-news
+npm install
+npm run dev
+```
+
+---
+
+## Running Article Generation Logic
+
+Install agent dependencies:
+
+```bash
+pip install -r agents/requirements.txt
+```
+
+Run the news agent:
 
 ```bash
 python -m agents.news_agent
 ```
 
-### Flask Backend
-
-1. Ensure `firebase-service-account.json` is placed in the `back_end/` directory.
-2. Launch the Flask app:
-
-   ```bash
-   python -m back_end.app
-   ```
-
-
-### Frontend
-
-1. Navigate to the frontend folder:
-
-   ```bash
-   cd front_end/neural-news
-   ```
-2. Install dependencies and start the dev server:
-
-   ```bash
-   npm install
-   npm run dev
-   ```
 
 ---
 
 ## Data & Models
 
-* The default setup uses Ollama’s `qwen3:8b` model locally and OpenRouter via API due to budget constraints.
-* For production use, update the agent modules in `back_end/agents` to point at preferred models for performance and consistency.
-
----
-
-## Daily Automation
-
-To automate daily news generation:
-
-1. Schedule a job (cron, Airflow, etc.) that runs:
-
-   ```bash
-   source /path/to/neuro-news/.venv/bin/activate
-   python -m agents.news_agent
-   ```
-2. Verify output in Firestore and monitor logs for any errors.
+* Local testing: Ollama `qwen3:8b`
+* Cloud inference: OpenRouter API
+* Models are swappable in `agents/*.py`
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+MIT License. See `LICENSE` file for details.

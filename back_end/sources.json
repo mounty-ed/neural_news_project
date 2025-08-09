@@ -4,11 +4,6 @@
         "url": "https://www.bbc.com/news",
         "category": "general"
     },
-    "npr": {
-        "rss": "https://feeds.npr.org/1001/rss.xml",
-        "url": "https://www.npr.org",
-        "category": "general"
-    },
     
     "techcrunch": {
         "rss": "https://techcrunch.com/feed/",
@@ -36,17 +31,5 @@
         "rss": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml",
         "url": "https://www.nytimes.com/section/politics",
         "category": "politics"
-    },
-    
-    "cnbc": {
-        "rss": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-        "url": "https://www.cnbc.com",
-        "category": "business"
-    },
-    
-    "al_jazeera": {
-        "rss": "https://www.aljazeera.com/xml/rss/all.xml",
-        "url": "https://www.aljazeera.com",
-        "category": "international"
     }
 }
